@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}ORBIT - Data Transformation{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='img/orbit-icon.jpg') }}" alt="ORBIT" width="120" height="120">
+        <h1 class="display-4 fw-bold text-body-emphasis", font="arial">MILAN</h1>
+        <div class="col-lg-8 mx-auto">
+            <p class="lead mb-4">MILAN – Module Intelligent pour la Lecture et l’Analyse des Niveaux de Menace</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Traitement CSV -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-table text-primary fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Traitement CSV</h5>
+                    <p class="card-text">
+                        Analysez, transformez et visualisez vos données tabulaires. 
+                        Prétraitement, nettoyage et insights automatiques.
+                    </p>
+                    <a href="{{ url_for('data_processing') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-table me-2"></i>Commencer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transcription Audio -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-mic-fill text-success fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Transcription Audio</h5>
+                    <p class="card-text">
+                        Transcrivez et traduisez des fichiers audio localement. 
+                        Supporte multiple langues et traduction.
+                    </p>
+                    <a href="{{ url_for('audio_transcription') }}" class="btn btn-outline-success">
+                        <i class="bi bi-play-circle me-2"></i>Transcrire
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyse PDF -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-file-earmark-pdf text-danger fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Analyse de PDF</h5>
+                    <p class="card-text">
+                        Extrayez des informations, résumez et analysez 
+                        vos documents PDF avec l'IA.
+                    </p>
+                    <a href="{{ url_for('pdf_processing') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-search me-2"></i>Analyser
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartographie -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-geo-alt text-info fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Cartographie</h5>
+                    <p class="card-text">
+                        Visualisez et analysez des données géographiques. 
+                        Créez des cartes interactives.
+                    </p>
+                    <a href="{{ url_for('cartography') }}" class="btn btn-outline-info">
+                        <i class="bi bi-map me-2"></i>Explorer
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up text-primary me-2"></i>Analyse de Signal
+                    </h5>
+                    <p class="card-text">
+                        Analysez et visualisez des signaux audio
+                    </p>
+                    <a href="{{ url_for('signal_analysis') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-play-circle me-2"></i>Commencer l'analyse
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Historique -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-clock-history text-warning fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Historique</h5>
+                    <p class="card-text">
+                        Consultez vos analyses précédentes. 
+                        Retrouvez facilement vos projets.
+                    </p>
+                    <a href="{{ url_for('history') }}" class="btn btn-outline-warning">
+                        <i class="bi bi-list me-2"></i>Consulter
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paramètres -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-gear text-secondary fs-2"></i>
+                    </div>
+                    <h5 class="card-title">Paramètres</h5>
+                    <p class="card-text">
+                        Personnalisez votre expérience. 
+                        Configurez les modèles et préférences.
+                    </p>
+                    <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-sliders me-2"></i>Configurer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Informations -->
+    <div class="row mt-5">MILAN
+        <div class="col-12 text-center">
+            <div class="alert alert-light" role="alert">
+                <h4 class="alert-heading">MILAN : Votre Assistant d'Analyse de Données</h4>
+                <p>
+                    Transformez vos données brutes en insights puissants. 
+                    Analyse locale, traitement intelligent et visualisation interactive.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.feature-icon {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.card {
+        background-color: #f2f5f7;  
+}
+</style>
+{% endblock %}

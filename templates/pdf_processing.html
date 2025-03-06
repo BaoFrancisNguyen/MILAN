@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}MILAN - Analyse PDF{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">
+                        <i class="bi bi-file-earmark-pdf"></i> Analyse de Documents PDF
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('process_pdf') }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="pdfFile" class="form-label">Sélectionnez un fichier PDF</label>
+                            <input class="form-control" type="file" id="pdfFile" name="pdf_file" accept=".pdf" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="analysisType" class="form-label">Type d'analyse</label>
+                            <select class="form-select" id="analysisType" name="analysis_type">
+                                <option value="summary">Résumé général</option>
+                                <option value="keywords">Extraction de mots-clés</option>
+                                <option value="entities">Reconnaissance d'entités</option>
+                                <option value="full">Analyse complète</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-search"></i> Analyser le PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if analysis_result %}
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h3>Résultats de l'analyse</h3>
+                </div>
+                <div class="card-body">
+                    {{ analysis_result | safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

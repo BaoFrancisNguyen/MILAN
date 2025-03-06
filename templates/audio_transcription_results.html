@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Résultats de Transcription Audio{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-mic-fill me-2"></i>Résultats de Transcription Audio
+                    </h3>
+                    <small>{{ result.duration }}</small>
+                </div>
+
+                <div class="card-body">
+                    <!-- Informations supplémentaires -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-translate me-2 text-primary"></i>Langue détectée
+                                        </h6>
+                                        <span class="badge bg-primary">
+                                            {{ result.language_probability }}
+                                        </span>
+                                    </div>
+                                    <div class="display-6 mt-2 text-primary">
+                                        {{ result.language|upper }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-clock me-2 text-success"></i>Durée de l'audio
+                                    </h6>
+                                    <div class="display-6 mt-2 text-success">
+                                        {{ result.duration }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-list-ol me-2 text-info"></i>Segments de transcription
+                                    </h6>
+                                    <div class="display-6 mt-2 text-info">
+                                        {{ result.segments|length }} segments
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transcription et Traduction -->
+                    <div class="row">
+                        <!-- Transcription Originale -->
+                        <div class="col-md-{{ '6' if result.translated_text else '12' }}">
+                            <div class="card h-100">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-text-paragraph me-2"></i>Transcription Originale
+                                    </span>
+                                    <span class="badge bg-secondary">{{ result.language|upper }}</span>
+                                </div>
+                                <div class="card-body">
+                                    <textarea 
+                                        class="form-control" 
+                                        rows="8" 
+                                        readonly
+                                    >{{ result.original_text }}</textarea>
+                                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted d-flex align-items-center">
+                                            {{ result.original_text|wordcount }} mots
+                                            <i 
+                                                class="bi bi-info-circle ms-2" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="Nombre de mots dans la transcription originale"
+                                            ></i>
+                                        </small>
+                                        <button class="btn btn-sm btn-outline-secondary copy-original">
+                                            <i class="bi bi-clipboard me-2"></i>Copier
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Traduction (si disponible) -->
+                        {% if result.translated_text %}
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-globe me-2"></i>Traduction
+                                    </span>
+                                    <span class="badge bg-secondary">{{ result.target_language|upper }}</span>
+                                </div>
+                                <div class="card-body">
+                                    <textarea 
+                                        class="form-control" 
+                                        rows="8" 
+                                        readonly
+                                    >{{ result.translated_text }}</textarea>
+                                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted d-flex align-items-center">
+                                            {{ result.translated_text|wordcount }} mots
+                                            <i 
+                                                class="bi bi-info-circle ms-2" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                title="Nombre de mots dans la traduction"
+                                            ></i>
+                                        </small>
+                                        <button class="btn btn-sm btn-outline-secondary copy-translated">
+                                            <i class="bi bi-clipboard me-2"></i>Copier
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Options d'export -->
+                    <div class="card-footer mt-3 d-flex justify-content-between">
+                        <a href="{{ url_for('audio_transcription') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Nouvelle transcription
+                        </a>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-2"></i>Exporter
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="export-original">
+                                        <i class="bi bi-file-text me-2"></i>Transcription originale
+                                    </a>
+                                </li>
+                                {% if result.translated_text %}
+                                <li>
+                                    <a class="dropdown-item" href="#" id="export-translation">
+                                        <i class="bi bi-globe me-2"></i>Traduction
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser les tooltips Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Copier le texte original
+    document.querySelector('.copy-original').addEventListener('click', function() {
+        const originalText = document.querySelector('textarea:nth-child(2)');
+        navigator.clipboard.writeText(originalText.value).then(() => {
+            this.innerHTML = '<i class="bi bi-clipboard-check me-2"></i>Copié !';
+            setTimeout(() => {
+                this.innerHTML = '<i class="bi bi-clipboard me-2"></i>Copier';
+            }, 2000);
+        });
+    });
+
+    // Copier le texte traduit (si disponible)
+    const copyTranslatedBtn = document.querySelector('.copy-translated');
+    if (copyTranslatedBtn) {
+        copyTranslatedBtn.addEventListener('click', function() {
+            const textareas = document.querySelectorAll('textarea');
+            const translatedText = textareas.length > 1 ? textareas[1] : null;
+            
+            if (translatedText) {
+                navigator.clipboard.writeText(translatedText.value).then(() => {
+                    this.innerHTML = '<i class="bi bi-clipboard-check me-2"></i>Copié !';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="bi bi-clipboard me-2"></i>Copier';
+                    }, 2000);
+                });
+            }
+        });
+    }
+
+    // Exporter les textes
+    function exportText(text, filename) {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+    }
+
+    // Exporter la transcription originale
+    const exportOriginalBtn = document.getElementById('export-original');
+    if (exportOriginalBtn) {
+        exportOriginalBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const originalText = document.querySelector('textarea:nth-child(2)').value;
+            exportText(originalText, 'transcription_originale.txt');
+        });
+    }
+
+    // Exporter la traduction
+    const exportTranslationBtn = document.getElementById('export-translation');
+    if (exportTranslationBtn) {
+        exportTranslationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const textareas = document.querySelectorAll('textarea');
+            const translatedText = textareas.length > 1 ? textareas[1].value : '';
+            
+            if (translatedText) {
+                exportText(translatedText, 'traduction.txt');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

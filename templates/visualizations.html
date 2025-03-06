@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Visualisations{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Visualisations pour {{ filename }}</h1>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Paramètres de visualisation
+                </div>
+                <div class="card-body">
+                    <form id="visualization-form">
+                        <div class="form-group mb-3">
+                            <label for="chart-type">Type de graphique</label>
+                            <select class="form-control" id="chart-type" name="chart_type">
+                                <option value="Histogramme">Histogramme</option>
+                                <option value="Boîte à moustaches">Boîte à moustaches</option>
+                                <option value="Scatter plot">Nuage de points</option>
+                                <option value="Carte de chaleur">Carte de chaleur</option>
+                                <option value="Graphique en barres">Graphique en barres</option>
+                                <option value="Camembert">Camembert</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="x-var">Variable X</label>
+                            <select class="form-control" id="x-var" name="x_var">
+                                <option value="Aucune">Aucune</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="y-var">Variable Y</label>
+                            <select class="form-control" id="y-var" name="y_var">
+                                <option value="Aucune">Aucune</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="color-var">Variable de couleur</label>
+                            <select class="form-control" id="color-var" name="color_var">
+                                <option value="Aucune">Aucune</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div id="additional-params">
+                            <!-- Paramètres supplémentaires selon le type de graphique -->
+                        </div>
+                        
+                        <button type="button" id="generate-viz" class="btn btn-primary mt-3">
+                            Générer la visualisation
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    Visualisation
+                </div>
+                <div class="card-body">
+                    <div id="visualization-container" style="height: 500px;">
+                        <div class="text-center">
+                            <p>Sélectionnez les paramètres et cliquez sur "Générer la visualisation"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ajouter Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Récupérer les éléments du formulaire
+        const chartTypeSelect = document.getElementById('chart-type');
+        const xVarSelect = document.getElementById('x-var');
+        const yVarSelect = document.getElementById('y-var');
+        const colorVarSelect = document.getElementById('color-var');
+        const generateBtn = document.getElementById('generate-viz');
+        const additionalParams = document.getElementById('additional-params');
+        
+        // Activer ou désactiver les champs selon le type de graphique
+        chartTypeSelect.addEventListener('change', function() {
+            const chartType = this.value;
+            
+            // Réinitialiser les paramètres supplémentaires
+            additionalParams.innerHTML = '';
+            
+            // Ajuster les champs selon le type de graphique
+            if (chartType === 'Histogramme') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = true;
+                colorVarSelect.disabled = false;
+                
+                // Ajouter le paramètre bins
+                const binsDiv = document.createElement('div');
+                binsDiv.className = 'form-group mb-3';
+                binsDiv.innerHTML = `
+                    <label for="bins">Nombre de bins</label>
+                    <input type="number" class="form-control" id="bins" name="bins" value="20" min="5" max="100">
+                `;
+                additionalParams.appendChild(binsDiv);
+            }
+            else if (chartType === 'Boîte à moustaches') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = false;
+                colorVarSelect.disabled = false;
+            }
+            else if (chartType === 'Scatter plot') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = false;
+                colorVarSelect.disabled = false;
+                
+                // Ajouter le paramètre de taille des points
+                const sizeDiv = document.createElement('div');
+                sizeDiv.className = 'form-group mb-3';
+                sizeDiv.innerHTML = `
+                    <label for="size-var">Variable de taille</label>
+                    <select class="form-control" id="size-var" name="size_var">
+                        <option value="Uniforme">Uniforme</option>
+                        {% for column in numeric_columns %}
+                        <option value="{{ column }}">{{ column }}</option>
+                        {% endfor %}
+                    </select>
+                `;
+                additionalParams.appendChild(sizeDiv);
+            }
+            else if (chartType === 'Carte de chaleur') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = false;
+                colorVarSelect.disabled = true;
+                
+                // Ajouter le paramètre de fonction d'agrégation
+                const aggDiv = document.createElement('div');
+                aggDiv.className = 'form-group mb-3';
+                aggDiv.innerHTML = `
+                    <label for="agg-func">Fonction d'agrégation</label>
+                    <select class="form-control" id="agg-func" name="agg_func">
+                        <option value="mean">Moyenne</option>
+                        <option value="sum">Somme</option>
+                        <option value="count">Comptage</option>
+                        <option value="min">Minimum</option>
+                        <option value="max">Maximum</option>
+                    </select>
+                `;
+                additionalParams.appendChild(aggDiv);
+            }
+            else if (chartType === 'Graphique en barres') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = false;
+                colorVarSelect.disabled = false;
+            }
+            else if (chartType === 'Camembert') {
+                xVarSelect.disabled = false;
+                yVarSelect.disabled = false;
+                colorVarSelect.disabled = true;
+                
+                // Ajouter le paramètre de trou (donut)
+                const holeDiv = document.createElement('div');
+                holeDiv.className = 'form-group mb-3';
+                holeDiv.innerHTML = `
+                    <label for="hole-size">Taille du trou (0-1)</label>
+                    <input type="range" class="form-control" id="hole-size" name="hole_size" 
+                           min="0" max="0.8" step="0.1" value="0.3">
+                `;
+                additionalParams.appendChild(holeDiv);
+            }
+        });
+        
+        // Générer la visualisation
+        generateBtn.addEventListener('click', function() {
+            // Afficher un indicateur de chargement
+            document.getElementById('visualization-container').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="mt-2">Génération de la visualisation en cours...</p>
+                </div>
+            `;
+            
+            // Récupérer les valeurs du formulaire
+            const formData = {
+                chart_type: chartTypeSelect.value,
+                x_var: xVarSelect.value === 'Aucune' ? null : xVarSelect.value,
+                y_var: yVarSelect.value === 'Aucune' ? null : yVarSelect.value,
+                color_var: colorVarSelect.value === 'Aucune' ? null : colorVarSelect.value
+            };
+            
+            // Ajouter les paramètres supplémentaires
+            const additionalInputs = additionalParams.querySelectorAll('input, select');
+            additionalInputs.forEach(input => {
+                if (input.type === 'number' || input.type === 'range') {
+                    formData[input.name] = parseFloat(input.value);
+                } else {
+                    formData[input.name] = input.value === 'Aucune' ? null : input.value;
+                }
+            });
+            
+            // Appeler l'API pour générer la visualisation
+            fetch('/api/generate_visualization', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('visualization-container').innerHTML = `
+                        <div class="alert alert-danger">
+                            Erreur: ${data.error}
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Créer le graphique Plotly
+                Plotly.newPlot('visualization-container', data.data, data.layout, {responsive: true});
+            })
+            .catch(error => {
+                document.getElementById('visualization-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        Erreur de communication avec le serveur: ${error}
+                    </div>
+                `;
+            });
+        });
+        
+        // Déclencher le changement initial pour configurer les paramètres
+        chartTypeSelect.dispatchEvent(new Event('change'));
+    });
+</script>
+{% endblock %}

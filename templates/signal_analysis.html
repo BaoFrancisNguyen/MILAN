@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Analyse de Signal Audio{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>
+        <i class="bi bi-graph-up"></i> Analyse de Signal Audio
+    </h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="audioSignalForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="audioFile" class="form-label">
+                        <i class="bi bi-file-earmark-music"></i> Sélectionner un fichier audio
+                    </label>
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        id="audioFile" 
+                        name="audio_file" 
+                        accept="audio/*"
+                    >
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-play-circle"></i> Analyser le Signal
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="analysisResults" class="mt-4" style="display:none;">
+        <div class="card">
+            <div class="card-header">
+                Résultats de l'Analyse
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Caractéristiques</h5>
+                        <table class="table" id="featuresTable">
+                            <!-- Caractéristiques seront insérées ici -->
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Visualisations</h5>
+                        <img id="spectrogramImage" class="img-fluid mb-3">
+                        <img id="fourierImage" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('audioSignalForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch("{{ url_for('analyze_audio_signal') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Afficher les caractéristiques
+        const featuresTable = document.getElementById('featuresTable');
+        featuresTable.innerHTML = Object.entries(data.features).map(([key, value]) => `
+            <tr>
+                <td>${key}</td>
+                <td>${typeof value === 'number' ? value.toFixed(4) : value}</td>
+            </tr>
+        `).join('');
+        
+        // Afficher les images
+        document.getElementById('spectrogramImage').src = `data:image/png;base64,${data.spectrogramme}`;
+        document.getElementById('fourierImage').src = `data:image/png;base64,${data.fourier_transform}`;
+        
+        // Afficher les résultats
+        document.getElementById('analysisResults').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'analyse du signal');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1494 @@
+{% extends "base.html" %}
+
+{% block title %}MILAN – Module Intelligent pour la Lecture et l'Analyse des Niveaux de Menace{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transformation-card {
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+    .transformation-card.active {
+        border-left-color: #3498db;
+    }
+    .transformation-card.recommended {
+        border-left-color: #2ecc71;
+    }
+    .transformation-card:hover {
+        transform: translateY(-2px);
+    }
+    .analysis-container {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        border-left: 4px solid #3498db;
+    }
+    .recommendation-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        margin-left: 8px;
+    }
+    .stat-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    .stat-item .value {
+        font-weight: 600;
+        float: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Affichage des résultats d'analyse en haut de la page -->
+    {% if analysis_result %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-success">
+                <h5><i class="bi bi-check-circle-fill"></i> Analyse IA terminée avec succès</h5>
+                <p>L'analyse a généré {{ analysis_result|length }} caractères de résultats.</p>
+                
+                <!-- Affichage direct des résultats -->
+                <div class="analysis-container mt-3 p-3" style="white-space: pre-wrap; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #2ecc71;">
+                    {{ analysis_result|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('data_processing') }}">Données CSV</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('data_preview') }}">Aperçu</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Transformation</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-magic"></i> Transformation des données
+                </h1>
+                <div>
+                    <a href="{{ url_for('data_preview') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Retour à l'aperçu
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Transformations</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="transformations-nav">
+                                <a href="#tab-valeurs-manquantes" class="list-group-item list-group-item-action transformation-card active" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-question-diamond me-2"></i>
+                                        <div>
+                                            <div>Valeurs manquantes</div>
+                                            <small class="text-muted">Imputation, suppression</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-encodage" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-code-slash me-2"></i>
+                                        <div>
+                                            <div>Encodage</div>
+                                            <small class="text-muted">Variables catégorielles</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-standardisation" class="list-group-item list-group-item-action transformation-card recommended" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-rulers me-2"></i>
+                                        <div>
+                                            <div>Standardisation
+                                                <span class="badge bg-success recommendation-badge">Recommandé</span>
+                                            </div>
+                                            <small class="text-muted">Normalisation, scaling</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-outliers" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-exclamation-diamond me-2"></i>
+                                        <div>
+                                            <div>Valeurs aberrantes</div>
+                                            <small class="text-muted">Détection, traitement</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-feature-engineering" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-gear-wide-connected me-2"></i>
+                                        <div>
+                                            <div>Ingénierie de caractéristiques</div>
+                                            <small class="text-muted">Nouvelles variables</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- Nouveaux onglets ajoutés -->
+                                <a href="#tab-drop-columns" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-trash me-2"></i>
+                                        <div>
+                                            <div>Supprimer des colonnes</div>
+                                            <small class="text-muted">Élimination de variables</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-merge-columns" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-link me-2"></i>
+                                        <div>
+                                            <div>Fusionner des colonnes</div>
+                                            <small class="text-muted">Création de nouvelles variables</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-value-explorer" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-search me-2"></i>
+                                        <div>
+                                            <div>Explorateur de valeurs</div>
+                                            <small class="text-muted">Valeurs uniques, remplacement</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#tab-analyse-ia" class="list-group-item list-group-item-action transformation-card" data-bs-toggle="list">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-robot me-2"></i>
+                                        <div>
+                                            <div>Analyse IA</div>
+                                            <small class="text-muted">Insights automatiques</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Statistiques</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-item">
+                                Lignes <span class="value">{{ df_info.shape[0] }}</span>
+                            </div>
+                            <div class="stat-item">
+                                Colonnes <span class="value">{{ df_info.shape[1] }}</span>
+                            </div>
+                            <div class="stat-item">
+                                Valeurs manquantes <span class="value">{{ df_info.missing_values }}</span>
+                            </div>
+                            <div class="stat-item">
+                                Colonnes numériques <span class="value">{{ df_info.numeric_count }}</span>
+                            </div>
+                            <div class="stat-item">
+                                Colonnes catégorielles <span class="value">{{ df_info.shape[1] - df_info.numeric_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-9">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <!-- Contenu de l'onglet actif -->
+                            <div class="tab-content" id="transformation-tabContent">
+                                <!-- Onglet Valeurs Manquantes -->
+                                <div class="tab-pane fade show active" id="tab-valeurs-manquantes" role="tabpanel">
+                                    <h4>Gestion des valeurs manquantes</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        Le jeu de données contient <strong>{{ df_info.missing_values }}</strong> valeurs manquantes.
+                                        Les valeurs manquantes peuvent affecter la qualité de vos analyses et modèles.
+                                    </div>
+                                    
+                                    <form id="missing-values-form" method="post" action="{{ url_for('data_transform') }}">
+                                        <input type="hidden" name="transformations[]" value="missing_values">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Stratégie globale</label>
+                                            <select class="form-select" name="missing_strategy" id="missing-strategy">
+                                                <option value="auto">Automatique (recommandé)</option>
+                                                <option value="drop_rows">Supprimer les lignes</option>
+                                                <option value="fill_mean">Remplacer par la moyenne (colonnes numériques)</option>
+                                                <option value="fill_median">Remplacer par la médiane (colonnes numériques)</option>
+                                                <option value="fill_mode">Remplacer par le mode (toutes colonnes)</option>
+                                                <option value="fill_constant">Remplacer par une valeur constante</option>
+                                                <option value="custom">Personnalisé par colonne</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div id="missing-threshold-container" class="mb-3 d-none">
+                                            <label class="form-label">Seuil de suppression</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="missing_threshold" id="missing-threshold" min="0" max="100" value="50">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <div class="form-text">
+                                                Supprimer les colonnes où plus de X% des valeurs sont manquantes
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="missing-constant-container" class="mb-3 d-none">
+                                            <label class="form-label">Valeur de remplacement</label>
+                                            <input type="text" class="form-control" name="missing_constant" id="missing-constant" placeholder="Valeur de remplacement">
+                                            <div class="form-text">
+                                                Cette valeur sera utilisée pour remplacer toutes les valeurs manquantes
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="missing-custom-container" class="mb-3 d-none">
+                                            <label class="form-label">Configuration par colonne</label>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="alert alert-warning">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                        Le mode personnalisé sera implémenté dans la version complète
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <button type="submit" class="btn btn-primary" id="apply-missing-values">
+                                                <i class="bi bi-check-circle"></i> Appliquer
+                                            </button>
+                                            <span id="missing-values-status" class="text-success d-none">
+                                                <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                            </span>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Onglet Encodage -->
+                                <div class="tab-pane fade" id="tab-encodage" role="tabpanel">
+                                    <h4>Encodage des variables catégorielles</h4>
+                                    
+                                    {% if categorical_columns %}
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            Le jeu de données contient <strong>{{ categorical_columns|length }}</strong> variables catégorielles.
+                                            L'encodage est nécessaire pour convertir ces variables en format numérique.
+                                        </div>
+                                        
+                                        <form id="encoding-form" method="post" action="{{ url_for('data_transform') }}">
+                                            <input type="hidden" name="transformations[]" value="encoding">
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Variables à encoder</label>
+                                                <select class="form-select" name="columns_to_encode[]" id="columns-to-encode" multiple size="5">
+                                                    {% for col in categorical_columns %}
+                                                        <option value="{{ col }}">{{ col }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text">
+                                                    Maintenez Ctrl/Cmd pour sélectionner plusieurs colonnes
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Méthode d'encodage</label>
+                                                <select class="form-select" name="encoding_method" id="encoding-method">
+                                                    <option value="one_hot">One-Hot Encoding (recommandé pour peu de catégories)</option>
+                                                    <option value="label">Label Encoding (ordinal, binaire)</option>
+                                                    <option value="frequency">Encodage Fréquentiel (haute cardinalité)</option>
+                                                </select>
+                                                <div class="form-text" id="encoding-description">
+                                                    One-Hot Encoding: Crée une colonne binaire pour chaque catégorie
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="encoding-options-container" class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="true" name="drop_original" id="drop-original" checked>
+                                                    <label class="form-check-label" for="drop-original">
+                                                        Supprimer les colonnes originales après encodage
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="true" name="handle_missing" id="handle-missing" checked>
+                                                    <label class="form-check-label" for="handle-missing">
+                                                        Traiter les valeurs manquantes pendant l'encodage
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between">
+                                                <button type="submit" class="btn btn-primary" id="apply-encoding">
+                                                    <i class="bi bi-check-circle"></i> Appliquer
+                                                </button>
+                                                <span id="encoding-status" class="text-success d-none">
+                                                    <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                                </span>
+                                            </div>
+                                        </form>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Aucune variable catégorielle détectée dans le jeu de données.
+                                            L'encodage n'est pas nécessaire.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Onglet Standardisation -->
+                                <div class="tab-pane fade" id="tab-standardisation" role="tabpanel">
+                                    <h4>Standardisation des données numériques</h4>
+                                    
+                                    {% if numeric_columns %}
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            Le jeu de données contient <strong>{{ numeric_columns|length }}</strong> variables numériques.
+                                            La standardisation peut améliorer significativement les performances des algorithmes.
+                                        </div>
+                                        
+                                        <form id="standardization-form" method="post" action="{{ url_for('data_transform') }}">
+                                            <input type="hidden" name="transformations[]" value="standardization">
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Variables à standardiser</label>
+                                                <select class="form-select" name="columns_to_standardize[]" id="columns-to-standardize" multiple size="5">
+                                                    {% for col in numeric_columns %}
+                                                        <option value="{{ col }}">{{ col }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text">
+                                                    Maintenez Ctrl/Cmd pour sélectionner plusieurs colonnes
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Méthode de standardisation</label>
+                                                <select class="form-select" name="standardization_method" id="standardization-method">
+                                                    <option value="zscore">Z-Score / StandardScaler (moyenne=0, écart-type=1)</option>
+                                                    <option value="minmax">MinMaxScaler (échelle [0,1])</option>
+                                                    <option value="robust">RobustScaler (résistant aux outliers)</option>
+                                                    <option value="maxabs">MaxAbsScaler (échelle [-1,1])</option>
+                                                </select>
+                                                <div class="form-text" id="standardization-description">
+                                                    Z-Score: Soustraction de la moyenne et division par l'écart-type
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="standardization-recommendations" class="mb-3">
+                                                <h6>Recommandations</h6>
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <ul class="mb-0">
+                                                            <li>Utilisez <strong>Z-Score</strong> pour les distributions approximativement normales</li>
+                                                            <li>Utilisez <strong>MinMaxScaler</strong> quand vous avez besoin de valeurs entre 0 et 1</li>
+                                                            <li>Utilisez <strong>RobustScaler</strong> en présence de valeurs aberrantes</li>
+                                                            <li>Utilisez <strong>MaxAbsScaler</strong> pour les données éparses</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between">
+                                                <button type="submit" class="btn btn-primary" id="apply-standardization">
+                                                    <i class="bi bi-check-circle"></i> Appliquer
+                                                </button>
+                                                <span id="standardization-status" class="text-success d-none">
+                                                    <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                                </span>
+                                            </div>
+                                        </form>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Aucune variable numérique détectée dans le jeu de données.
+                                            La standardisation n'est pas applicable.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Onglet Valeurs Aberrantes -->
+                                <div class="tab-pane fade" id="tab-outliers" role="tabpanel">
+                                    <h4>Détection et traitement des valeurs aberrantes</h4>
+                                    
+                                    {% if numeric_columns %}
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            Les valeurs aberrantes peuvent fausser vos analyses et affecter la performance des modèles.
+                                        </div>
+                                        
+                                        <form id="outliers-form" method="post" action="{{ url_for('data_transform') }}">
+                                            <input type="hidden" name="transformations[]" value="outliers">
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Variables à analyser</label>
+                                                <select class="form-select" name="columns_for_outliers[]" id="columns-for-outliers" multiple size="5">
+                                                    {% for col in numeric_columns %}
+                                                        <option value="{{ col }}">{{ col }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Méthode de détection</label>
+                                                <select class="form-select" name="outlier_detection_method" id="outlier-detection-method">
+                                                    <option value="iqr">Méthode IQR (boîtes à moustaches)</option>
+                                                    <option value="zscore">Z-Score (écarts à la moyenne)</option>
+                                                    <option value="isolation_forest">Isolation Forest (apprentissage)</option>
+                                                </select>
+                                                <div class="form-text" id="outlier-detection-description">
+                                                    IQR: Détecte les valeurs en dehors de [Q1-1.5*IQR, Q3+1.5*IQR]
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Traitement des valeurs aberrantes</label>
+                                                <select class="form-select" name="outlier_treatment" id="outlier-treatment">
+                                                    <option value="tag">Détecter uniquement (ajouter une colonne indicatrice)</option>
+                                                    <option value="winsorize">Winsorisation (limiter aux seuils)</option>
+                                                    <option value="remove">Supprimer les lignes contenant des valeurs aberrantes</option>
+                                                    <option value="impute">Remplacer par la médiane/mode</option>
+                                                </select>
+                                                <div class="form-text" id="outlier-treatment-description">
+                                                    La détection ajoute une colonne qui indique les valeurs aberrantes
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between">
+                                                <button type="submit" class="btn btn-primary" id="apply-outliers">
+                                                    <i class="bi bi-check-circle"></i> Appliquer
+                                                </button>
+                                                <span id="outliers-status" class="text-success d-none">
+                                                    <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                                </span>
+                                            </div>
+                                        </form>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Aucune variable numérique détectée dans le jeu de données.
+                                            La détection des valeurs aberrantes n'est pas applicable.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Onglet Ingénierie de caractéristiques -->
+                                <div class="tab-pane fade" id="tab-feature-engineering" role="tabpanel">
+                                    <h4>Ingénierie de caractéristiques</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        L'ingénierie de caractéristiques permet de créer de nouvelles variables à partir des existantes,
+                                        ce qui peut améliorer significativement la performance des modèles.
+                                    </div>
+                                    
+                                    <form id="feature-engineering-form" method="post" action="{{ url_for('data_transform') }}">
+                                        <input type="hidden" name="transformations[]" value="feature_engineering">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Type de transformation</label>
+                                            <select class="form-select" name="feature_engineering_type" id="feature-engineering-type">
+                                                <option value="interaction">Interaction entre variables</option>
+                                                <option value="polynomial">Transformation polynomiale</option>
+                                                <option value="binning">Discrétisation (binning)</option>
+                                                <option value="time">Extraction de caractéristiques temporelles</option>
+                                                <option value="text">Extraction de caractéristiques textuelles</option>
+                                            </select>
+                                            <div class="form-text" id="feature-engineering-description">
+                                                Interaction: Crée des produits ou ratios entre paires de variables
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="interaction-container" class="mb-3">
+                                            <label class="form-label">Variables à combiner</label>
+                                            <select class="form-select" name="interaction_columns[]" id="interaction-columns" multiple size="5">
+                                                {% for col in numeric_columns %}
+                                                    <option value="{{ col }}">{{ col }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">
+                                                Sélectionnez plusieurs colonnes pour créer des interactions entre elles
+                                            </div>
+                                            
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" value="multiplication" name="interaction_operations[]" id="multiply-operation" checked>
+                                                <label class="form-check-label" for="multiply-operation">
+                                                    Multiplication (A × B)
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="division" name="interaction_operations[]" id="divide-operation">
+                                                <label class="form-check-label" for="divide-operation">
+                                                    Division (A ÷ B)
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="addition" name="interaction_operations[]" id="add-operation">
+                                                <label class="form-check-label" for="add-operation">
+                                                    Addition (A + B)
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="subtraction" name="interaction_operations[]" id="subtract-operation">
+                                                <label class="form-check-label" for="subtract-operation">
+                                                    Soustraction (A - B)
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <button type="submit" class="btn btn-primary" id="apply-feature-engineering">
+                                                <i class="bi bi-check-circle"></i> Appliquer
+                                            </button>
+                                            <span id="feature-engineering-status" class="text-success d-none">
+                                                <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                            </span>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Nouvel onglet: Suppression de colonnes -->
+                                <div class="tab-pane fade" id="tab-drop-columns" role="tabpanel">
+                                    <h4>Suppression de colonnes</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        Sélectionnez les colonnes que vous souhaitez supprimer du jeu de données.
+                                        Cette opération est irréversible une fois appliquée.
+                                    </div>
+                                    
+                                    <form id="drop-columns-form" method="post" action="{{ url_for('data_transform') }}">
+                                        <input type="hidden" name="transformations[]" value="drop_columns">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Colonnes à supprimer</label>
+                                            <select class="form-select" name="columns_to_drop[]" id="columns-to-drop" multiple size="8">
+                                                {% for col in df_info.columns %}
+                                                    <option value="{{ col }}">{{ col }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">
+                                                Maintenez Ctrl/Cmd pour sélectionner plusieurs colonnes. 
+                                                Les colonnes sélectionnées seront définitivement supprimées du jeu de données.
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="confirm-drop" name="confirm_drop" required>
+                                            <label class="form-check-label" for="confirm-drop">
+                                                Je confirme vouloir supprimer ces colonnes
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <button type="submit" class="btn btn-primary" id="apply-drop-columns">
+                                                <i class="bi bi-check-circle"></i> Appliquer
+                                            </button>
+                                            <span id="drop-columns-status" class="text-success d-none">
+                                                <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                            </span>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Nouvel onglet: Fusion de colonnes -->
+                                <div class="tab-pane fade" id="tab-merge-columns" role="tabpanel">
+                                    <h4>Fusion de colonnes</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        Combinez plusieurs colonnes en une seule avec différentes méthodes de fusion.
+                                    </div>
+                                    
+                                    <form id="merge-columns-form" method="post" action="{{ url_for('data_transform') }}">
+                                        <input type="hidden" name="transformations[]" value="merge_columns">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Colonnes à fusionner</label>
+                                            <select class="form-select" name="columns_to_merge[]" id="columns-to-merge" multiple size="6">
+                                                {% for col in df_info.columns %}
+                                                    <option value="{{ col }}">{{ col }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">
+                                                Maintenez Ctrl/Cmd pour sélectionner plusieurs colonnes. 
+                                                Sélectionnez au moins deux colonnes.
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Nom de la nouvelle colonne</label>
+                                            <input type="text" class="form-control" name="new_column_name" id="new-column-name" required
+                                                   placeholder="ex: colonne_fusionnée">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Méthode de fusion</label>
+                                            <select class="form-select" name="merge_method" id="merge-method">
+                                                <option value="concat">Concaténation (texte)</option>
+                                                <option value="sum">Somme (numérique)</option>
+                                                <option value="mean">Moyenne (numérique)</option>
+                                                <option value="max">Maximum (numérique)</option>
+                                                <option value="min">Minimum (numérique)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div id="concat-options" class="mb-3">
+                                            <label class="form-label">Séparateur pour la concaténation</label>
+                                            <input type="text" class="form-control" name="separator" id="separator" value=", ">
+                                            <div class="form-text">
+                                                Caractère(s) utilisé(s) pour séparer les valeurs lors de la concaténation.
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" value="true" name="drop_original_columns" id="drop-original-columns">
+                                            <label class="form-check-label" for="drop-original-columns">
+                                                Supprimer les colonnes originales après fusion
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <button type="submit" class="btn btn-primary" id="apply-merge-columns">
+                                                <i class="bi bi-check-circle"></i> Appliquer
+                                            </button>
+                                            <span id="merge-columns-status" class="text-success d-none">
+                                                <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                            </span>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Nouvel onglet: Explorateur de valeurs -->
+                                <div class="tab-pane fade" id="tab-value-explorer" role="tabpanel">
+                                    <h4>Explorateur de valeurs</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        Explorez les valeurs uniques d'une colonne et remplacez celles qui sont indésirables.
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label">Sélectionnez une colonne à explorer</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="column-to-explore">
+                                                <option value="">-- Choisir une colonne --</option>
+                                                {% for col in df_info.columns %}
+                                                    <option value="{{ col }}">{{ col }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button class="btn btn-outline-primary" type="button" id="explore-column-btn">
+                                                <i class="bi bi-search"></i> Explorer
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Conteneur pour les résultats de l'exploration -->
+                                    <div id="column-exploration-results" class="d-none">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0" id="explored-column-name"></h5>
+                                                    <span class="badge bg-primary" id="column-type-badge">Type</span>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-3">
+                                                        <div class="stat-item">
+                                                            Total <span class="value" id="total-rows">0</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stat-item">
+                                                            Valeurs uniques <span class="value" id="unique-values">0</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stat-item">
+                                                            Valeurs manquantes <span class="value" id="missing-values">0</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stat-item">
+                                                            Complétude <span class="value" id="completeness">0%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <h6>Distribution des valeurs</h6>
+                                                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                                    <table class="table table-sm table-striped table-hover" id="values-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Valeur</th>
+                                                                <th>Fréquence</th>
+                                                                <th>Pourcentage</th>
+                                                                <th>Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="values-tbody">
+                                                            <!-- Les valeurs seront ajoutées ici dynamiquement -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                
+                                                <div id="distribution-chart" style="height: 200px; margin-top: 20px;">
+                                                    <!-- Le graphique sera ajouté ici -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Formulaire de remplacement des valeurs -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Remplacement de valeurs</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="replace-values-form" method="post" action="{{ url_for('data_transform') }}">
+                                                    <input type="hidden" name="transformations[]" value="replace_values">
+                                                    <input type="hidden" name="column_to_replace" id="column-to-replace">
+                                                    
+                                                    <div id="replacements-container">
+                                                        <!-- Ajout dynamique des lignes de remplacement -->
+                                                        <div class="row mb-2 replacement-row">
+                                                            <div class="col-5">
+                                                                <select class="form-select original-value" name="original_values[]">
+                                                                    <option value="">-- Choisir une valeur --</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-5">
+                                                                <input type="text" class="form-control new-value" name="new_values[]" placeholder="Nouvelle valeur">
+                                                            </div>
+                                                            <div class="col-2">
+                                                                <button type="button" class="btn btn-outline-danger remove-replacement">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3 mt-2">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-replacement">
+                                                            <i class="bi bi-plus-circle"></i> Ajouter un remplacement
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="replace-all-occurrences" name="replace_all_occurrences" checked>
+                                                        <label class="form-check-label" for="replace-all-occurrences">
+                                                            Remplacer toutes les occurrences (sinon, uniquement la première)
+                                                        </label>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between">
+                                                        <button type="submit" class="btn btn-primary" id="apply-replace-values">
+                                                            <i class="bi bi-check-circle"></i> Appliquer les remplacements
+                                                        </button>
+                                                        <span id="replace-values-status" class="text-success d-none">
+                                                            <i class="bi bi-check-circle-fill"></i> Transformation ajoutée
+                                                        </span>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Message d'attente pendant le chargement des données -->
+                                    <div id="loading-values" class="d-none text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                        <p class="mt-2">Récupération des valeurs uniques en cours...</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Onglet Analyse IA -->
+                                <div class="tab-pane fade" id="tab-analyse-ia" role="tabpanel">
+                                    <h4>Analyse avec Intelligence Artificielle</h4>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        L'IA peut analyser votre jeu de données et fournir des insights précieux,
+                                        ainsi que des recommandations de transformation.
+                                    </div>
+                                    
+                                    <form id="ai-analysis-form" method="post" action="{{ url_for('data_transform') }}">
+                                        <input type="hidden" name="transformations[]" value="ai_analysis">
+                                        <input type="hidden" name="is_ai_analysis" value="true">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Instructions pour l'analyse</label>
+                                            <textarea class="form-control" name="user_context" id="user-context" rows="5" placeholder="Décrivez ce que vous souhaitez analyser ou demandez..."></textarea>
+                                            <div class="form-text">
+                                                Exemple: "Identifiez les facteurs qui influencent le plus la variable cible" ou "Quelle est la corrélation entre A et B?"
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" value="true" name="save_history" id="save-history" checked>
+                                            <label class="form-check-label" for="save-history">
+                                                Sauvegarder cette analyse dans l'historique
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <button type="submit" class="btn btn-primary" id="run-ai-analysis">
+                                                <i class="bi bi-robot"></i> Analyser avec l'IA
+                                            </button>
+                                            <span id="ai-analysis-status" class="text-success d-none">
+                                                <i class="bi bi-check-circle-fill"></i> Analyse en cours...
+                                            </span>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Transformations sélectionnées</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="selected-transformations-container">
+                                <div class="alert alert-info" id="no-transformations-message">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    Utilisez les onglets ci-dessus pour sélectionner et appliquer des transformations à vos données.
+                                </div>
+                                <div class="d-none" id="transformations-list">
+                                    <!-- Liste des transformations appliquées -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour l'analyse IA -->
+<div class="modal fade" id="aiAnalysisModal" tabindex="-1" aria-labelledby="aiAnalysisModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aiAnalysisModalLabel">Analyse IA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="modal-user-context" class="form-label">Instructions pour l'analyse</label>
+                    <textarea class="form-control" id="modal-user-context" rows="5" placeholder="Décrivez ce que vous souhaitez analyser ou demandez..."></textarea>
+                    <div class="form-text">
+                        Exemple: "Identifiez les facteurs qui influencent le plus la variable cible" ou "Quelle est la corrélation entre A et B?"
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="modal-save-history" checked>
+                    <label class="form-check-label" for="modal-save-history">
+                        Sauvegarder cette analyse dans l'historique
+                    </label>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    L'analyse IA sera exécutée sur les données actuellement chargées.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" form="ai-analysis-form" class="btn btn-primary" id="execute-ai-analysis">
+                    <i class="bi bi-robot"></i> Exécuter l'analyse
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM chargé, initialisation des gestionnaires d'événements");
+    
+    // Définition des descriptions pour les méthodes
+    const descriptions = {
+        // Descriptions d'encodage
+        'one_hot': "One-Hot Encoding: Crée une colonne binaire pour chaque catégorie",
+        'label': "Label Encoding: Convertit chaque catégorie en nombre entier",
+        'frequency': "Encodage Fréquentiel: Remplace chaque catégorie par sa fréquence",
+        
+        // Descriptions de standardisation
+        'zscore': "Z-Score: Soustraction de la moyenne et division par l'écart-type",
+        'minmax': "MinMaxScaler: Mise à l'échelle entre 0 et 1",
+        'robust': "RobustScaler: Standardisation robuste aux valeurs aberrantes",
+        'maxabs': "MaxAbsScaler: Mise à l'échelle entre -1 et 1",
+        
+        // Descriptions de détection des outliers
+        'iqr': "IQR: Détecte les valeurs en dehors de [Q1-1.5*IQR, Q3+1.5*IQR]",
+        'zscore': "Z-Score: Détecte les valeurs à plus de n écarts-types de la moyenne",
+        'isolation_forest': "Isolation Forest: Algorithme d'apprentissage pour détecter les anomalies",
+        
+        // Descriptions de traitement des outliers
+        'tag': "La détection ajoute une colonne qui indique les valeurs aberrantes",
+        'winsorize': "Winsorisation: Remplace les valeurs aberrantes par les seuils",
+        'remove': "Supprime les lignes contenant des valeurs aberrantes",
+        'impute': "Remplace les valeurs aberrantes par la médiane ou le mode",
+        
+        // Descriptions d'ingénierie de caractéristiques
+        'interaction': "Interaction: Crée des produits ou ratios entre paires de variables",
+        'polynomial': "Transformation polynomiale: Crée des termes au carré, cube, etc.",
+        'binning': "Discrétisation: Transforme des variables continues en catégories",
+        'time': "Extraction de caractéristiques temporelles à partir de dates",
+        'text': "Extraction de caractéristiques à partir de texte"
+    };
+    
+    // Fonction pour mettre à jour les descriptions
+    function updateDescription(selectElement, descriptionId) {
+        const selectedValue = selectElement.value;
+        const description = descriptions[selectedValue] || "Description non disponible";
+        const descriptionElement = document.getElementById(descriptionId);
+        if (descriptionElement) {
+            descriptionElement.textContent = description;
+        }
+    }
+    
+    // Configuration des conteneurs conditionnels
+    const missingStrategy = document.getElementById('missing-strategy');
+    if (missingStrategy) {
+        missingStrategy.addEventListener('change', function() {
+            const strategyValue = this.value;
+            const thresholdContainer = document.getElementById('missing-threshold-container');
+            const constantContainer = document.getElementById('missing-constant-container');
+            const customContainer = document.getElementById('missing-custom-container');
+            
+            if (thresholdContainer && constantContainer && customContainer) {
+                // Masquer tous les conteneurs
+                thresholdContainer.classList.add('d-none');
+                constantContainer.classList.add('d-none');
+                customContainer.classList.add('d-none');
+                
+                // Afficher le conteneur approprié
+                if (strategyValue === 'drop_rows' || strategyValue === 'drop_columns') {
+                    thresholdContainer.classList.remove('d-none');
+                } else if (strategyValue === 'fill_constant') {
+                    constantContainer.classList.remove('d-none');
+                } else if (strategyValue === 'custom') {
+                    customContainer.classList.remove('d-none');
+                }
+            }
+        });
+    }
+    
+    // Gestionnaire pour la modification des listes déroulantes
+    const encodingMethodSelect = document.getElementById('encoding-method');
+    if (encodingMethodSelect) {
+        encodingMethodSelect.addEventListener('change', function() {
+            const descriptionElement = document.getElementById('encoding-description');
+            if (descriptionElement) {
+                updateDescription(this, 'encoding-description');
+            }
+        });
+    }
+
+    const standardizationMethodSelect = document.getElementById('standardization-method');
+    if (standardizationMethodSelect) {
+        standardizationMethodSelect.addEventListener('change', function() {
+            const descriptionElement = document.getElementById('standardization-description');
+            if (descriptionElement) {
+                updateDescription(this, 'standardization-description');
+            }
+        });
+    }
+
+    const outlierDetectionMethodSelect = document.getElementById('outlier-detection-method');
+    if (outlierDetectionMethodSelect) {
+        outlierDetectionMethodSelect.addEventListener('change', function() {
+            const descriptionElement = document.getElementById('outlier-detection-description');
+            if (descriptionElement) {
+                updateDescription(this, 'outlier-detection-description');
+            }
+        });
+    }
+
+    const outlierTreatmentSelect = document.getElementById('outlier-treatment');
+    if (outlierTreatmentSelect) {
+        outlierTreatmentSelect.addEventListener('change', function() {
+            const descriptionElement = document.getElementById('outlier-treatment-description');
+            if (descriptionElement) {
+                updateDescription(this, 'outlier-treatment-description');
+            }
+        });
+    }
+
+    const featureEngineeringTypeSelect = document.getElementById('feature-engineering-type');
+    if (featureEngineeringTypeSelect) {
+        featureEngineeringTypeSelect.addEventListener('change', function() {
+            const descriptionElement = document.getElementById('feature-engineering-description');
+            if (descriptionElement) {
+                updateDescription(this, 'feature-engineering-description');
+            }
+        });
+    }
+
+    // Gestionnaire pour la confirmation de suppression de colonnes
+    const confirmDropCheckbox = document.getElementById('confirm-drop');
+    const applyDropColumnsBtn = document.getElementById('apply-drop-columns');
+    
+    if (confirmDropCheckbox && applyDropColumnsBtn) {
+        confirmDropCheckbox.addEventListener('change', function() {
+            applyDropColumnsBtn.disabled = !this.checked;
+        });
+    }
+
+    // Gestionnaire pour le changement de méthode de fusion
+    const mergeMethodSelect = document.getElementById('merge-method');
+    const concatOptionsDiv = document.getElementById('concat-options');
+    
+    if (mergeMethodSelect && concatOptionsDiv) {
+        mergeMethodSelect.addEventListener('change', function() {
+            if (this.value === 'concat') {
+                concatOptionsDiv.classList.remove('d-none');
+            } else {
+                concatOptionsDiv.classList.add('d-none');
+            }
+        });
+    }
+    
+    // Gestionnaire pour l'exploration de colonnes
+    const exploreColumnBtn = document.getElementById('explore-column-btn');
+    if (exploreColumnBtn) {
+        exploreColumnBtn.addEventListener('click', function() {
+            const columnSelect = document.getElementById('column-to-explore');
+            if (columnSelect) {
+                const columnName = columnSelect.value;
+                
+                if (!columnName) {
+                    alert("Veuillez sélectionner une colonne à explorer.");
+                    return;
+                }
+                
+                // Afficher le spinner de chargement
+                const loadingElement = document.getElementById('loading-values');
+                const resultsElement = document.getElementById('column-exploration-results');
+                
+                if (loadingElement && resultsElement) {
+                    loadingElement.classList.remove('d-none');
+                    resultsElement.classList.add('d-none');
+                    
+                    // Effectuer la requête AJAX
+                    fetch('/api/column_values', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ column_name: columnName }),
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors de la récupération des valeurs');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Masquer le chargement
+                        loadingElement.classList.add('d-none');
+                        resultsElement.classList.remove('d-none');
+                        
+                        // Mettre à jour le titre et les statistiques
+                        document.getElementById('explored-column-name').textContent = columnName;
+                        document.getElementById('column-type-badge').textContent = data.stats.data_type;
+                        document.getElementById('total-rows').textContent = data.stats.total_rows;
+                        document.getElementById('unique-values').textContent = data.stats.unique_values;
+                        document.getElementById('missing-values').textContent = data.stats.missing_values;
+                        
+                        // Calculer le pourcentage de complétude
+                        const completeness = 100 - (data.stats.missing_values / data.stats.total_rows * 100);
+                        document.getElementById('completeness').textContent = completeness.toFixed(1) + '%';
+                        
+                        // Remplir le tableau des valeurs
+                        const tbody = document.getElementById('values-tbody');
+                        tbody.innerHTML = '';
+                        
+                        data.values.forEach(item => {
+                            const row = document.createElement('tr');
+                            
+                            // Calcul du pourcentage
+                            const percentage = (item.count / data.stats.total_rows * 100).toFixed(1);
+                            
+// Formater la valeur pour l'affichage
+let displayValue = item.value;
+                            if (displayValue === null || displayValue === "NULL") {
+                                displayValue = '<em class="text-muted">NULL</em>';
+                            } else if (displayValue === '') {
+                                displayValue = '<em class="text-muted">(chaîne vide)</em>';
+                            }
+                            
+                            row.innerHTML = `
+                                <td>${displayValue}</td>
+                                <td>${item.count}</td>
+                                <td>${percentage}%</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary add-to-replace"
+                                            data-value="${item.value}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                </td>
+                            `;
+                            
+                            tbody.appendChild(row);
+                        });
+                        
+                        // Mettre à jour le select pour les remplacements
+                        updateReplacementOptions(data.values);
+                        
+                        // Mettre à jour le champ caché avec le nom de la colonne
+                        document.getElementById('column-to-replace').value = columnName;
+                        
+                        // Ajouter des écouteurs pour les boutons "Ajouter au remplacement"
+                        document.querySelectorAll('.add-to-replace').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const value = this.getAttribute('data-value');
+                                addValueToReplacement(value);
+                            });
+                        });
+                        
+                        // Créer le graphique de distribution
+                        createDistributionChart(data.values);
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        if (loadingElement) {
+                            loadingElement.classList.add('d-none');
+                        }
+                        alert("Erreur lors de la récupération des valeurs: " + error.message);
+                    });
+                }
+            }
+        });
+    }
+    
+    // Mettre à jour les options du sélecteur de valeurs originales
+    function updateReplacementOptions(values) {
+        const selects = document.querySelectorAll('.original-value');
+        
+        selects.forEach(select => {
+            // Conserver la valeur sélectionnée
+            const currentValue = select.value;
+            
+            // Vider et recréer les options
+            select.innerHTML = '<option value="">-- Choisir une valeur --</option>';
+            
+            values.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.value !== null ? item.value : "NULL";
+                
+                // Afficher clairement les valeurs null et vides
+                if (item.value === null || item.value === "NULL") {
+                    option.textContent = 'NULL';
+                } else if (item.value === '') {
+                    option.textContent = '(chaîne vide)';
+                } else {
+                    option.textContent = `${item.value} (${item.count})`;
+                }
+                
+                select.appendChild(option);
+            });
+            
+            // Restaurer la valeur sélectionnée si elle existe toujours
+            if (currentValue) {
+                const option = select.querySelector(`option[value="${currentValue}"]`);
+                if (option) {
+                    option.selected = true;
+                }
+            }
+        });
+    }
+    
+    // Ajouter une valeur au formulaire de remplacement
+    function addValueToReplacement(value) {
+        // Trouver le premier select disponible
+        const selects = document.querySelectorAll('.original-value');
+        let targetSelect = null;
+        
+        for (const select of selects) {
+            if (!select.value) {
+                targetSelect = select;
+                break;
+            }
+        }
+        
+        // Si aucun select disponible, ajouter une nouvelle ligne
+        if (!targetSelect) {
+            addReplacementRow();
+            targetSelect = document.querySelector('.replacement-row:last-child .original-value');
+        }
+        
+        // Sélectionner la valeur
+        for (let i = 0; i < targetSelect.options.length; i++) {
+            if (targetSelect.options[i].value == value) {
+                targetSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    
+    // Ajouter une nouvelle ligne de remplacement
+    function addReplacementRow() {
+        const container = document.getElementById('replacements-container');
+        if (!container) return;
+        
+        const templateRow = container.querySelector('.replacement-row');
+        if (!templateRow) return;
+        
+        const newRow = templateRow.cloneNode(true);
+        
+        // Réinitialiser les valeurs
+        const originalValueSelect = newRow.querySelector('.original-value');
+        const newValueInput = newRow.querySelector('.new-value');
+        
+        if (originalValueSelect) originalValueSelect.value = '';
+        if (newValueInput) newValueInput.value = '';
+        
+        // Ajouter des écouteurs d'événements
+        const removeBtn = newRow.querySelector('.remove-replacement');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                if (container.querySelectorAll('.replacement-row').length > 1) {
+                    this.closest('.replacement-row').remove();
+                }
+            });
+        }
+        
+        container.appendChild(newRow);
+    }
+    
+    // Gestionnaire pour le bouton d'ajout de remplacement
+    const addReplacementBtn = document.getElementById('add-replacement');
+    if (addReplacementBtn) {
+        addReplacementBtn.addEventListener('click', function() {
+            addReplacementRow();
+        });
+    }
+    
+    // Initialiser les gestionnaires pour les boutons de suppression existants
+    document.querySelectorAll('.remove-replacement').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = document.getElementById('replacements-container');
+            if (container && container.querySelectorAll('.replacement-row').length > 1) {
+                this.closest('.replacement-row').remove();
+            }
+        });
+    });
+    
+    // Fonction pour créer un graphique simple de distribution des valeurs
+    function createDistributionChart(values) {
+        const chartContainer = document.getElementById('distribution-chart');
+        if (!chartContainer) return;
+        
+        chartContainer.innerHTML = '';
+        
+        // Limiter à 15 valeurs pour le graphique
+        const chartData = values.slice(0, 15);
+        
+        // Vérifier s'il y a des données
+        if (chartData.length === 0) return;
+        
+        // Créer le graphique en SVG
+        const svgWidth = chartContainer.offsetWidth || 400;
+        const svgHeight = 200;
+        const margin = { top: 20, right: 20, bottom: 60, left: 50 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+        
+        // Calculer les échelles
+        const maxCount = Math.max(...chartData.map(item => item.count));
+        const barWidth = width / chartData.length;
+        
+        // Créer l'élément SVG
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", svgWidth);
+        svg.setAttribute("height", svgHeight);
+        
+        // Créer le groupe principal avec marge
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("transform", `translate(${margin.left},${margin.top})`);
+        svg.appendChild(g);
+        
+        // Dessiner les barres
+        chartData.forEach((item, index) => {
+            const barHeight = (item.count / maxCount) * height;
+            const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            
+            bar.setAttribute("x", index * barWidth + 2);
+            bar.setAttribute("y", height - barHeight);
+            bar.setAttribute("width", barWidth - 4);
+            bar.setAttribute("height", barHeight);
+            bar.setAttribute("fill", "#3498db");
+            
+            // Ajouter un titre pour l'infobulle
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent = `${item.value !== null ? item.value : 'NULL'}: ${item.count}`;
+            bar.appendChild(title);
+            
+            g.appendChild(bar);
+            
+            // Ajouter les étiquettes de l'axe X (valeurs)
+            if (chartData.length <= 15) {
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", index * barWidth + barWidth / 2);
+                text.setAttribute("y", height + 15);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-size", "10px");
+                
+                // Tronquer les valeurs trop longues
+                let label = String(item.value !== null ? item.value : 'NULL');
+                if (label.length > 10) {
+                    label = label.substring(0, 8) + '...';
+                }
+                
+                text.textContent = label;
+                g.appendChild(text);
+            }
+        });
+        
+        // Ajouter le graphique au conteneur
+        chartContainer.appendChild(svg);
+    }
+    
+    // Pour le modal d'analyse IA
+    const runAiAnalysisBtn = document.getElementById('run-ai-analysis');
+    try {
+        // Cette ligne peut échouer si Bootstrap n'est pas chargé correctement
+        // C'est pourquoi on l'entoure d'un try/catch
+        const aiAnalysisModal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+        
+        if (runAiAnalysisBtn) {
+            runAiAnalysisBtn.addEventListener('click', function(e) {
+                // Si le bouton est dans un formulaire, empêcher la soumission par défaut
+                if (this.form) {
+                    e.preventDefault();
+                    
+                    // Ouvrir le modal au lieu de soumettre directement
+                    const userContext = document.getElementById('user-context').value;
+                    const saveHistory = document.getElementById('save-history').checked;
+                    
+                    // Mettre à jour les champs dans le modal
+                    const modalUserContext = document.getElementById('modal-user-context');
+                    const modalSaveHistory = document.getElementById('modal-save-history');
+                    
+                    if (modalUserContext) modalUserContext.value = userContext;
+                    if (modalSaveHistory) modalSaveHistory.checked = saveHistory;
+                    
+                    // Afficher le modal
+                    aiAnalysisModal.show();
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation du modal:", error);
+        // En cas d'erreur, laisser le bouton fonctionner normalement
+        // comme un simple bouton de type submit
+    }
+    
+    // Gestionnaire pour le bouton d'exécution dans le modal
+    const executeAiAnalysisBtn = document.getElementById('execute-ai-analysis');
+    if (executeAiAnalysisBtn) {
+        executeAiAnalysisBtn.addEventListener('click', function() {
+            // Mettre à jour le formulaire principal avec les valeurs du modal
+            const modalUserContext = document.getElementById('modal-user-context');
+            const modalSaveHistory = document.getElementById('modal-save-history');
+            const userContextInput = document.getElementById('user-context');
+            const saveHistoryInput = document.getElementById('save-history');
+            
+            if (modalUserContext && userContextInput) {
+                userContextInput.value = modalUserContext.value;
+            }
+            
+            if (modalSaveHistory && saveHistoryInput) {
+                saveHistoryInput.checked = modalSaveHistory.checked;
+            }
+            
+            // Désactiver le bouton et afficher un indicateur de chargement
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyse en cours...';
+            
+            // Afficher une barre de progression dans le modal
+            try {
+                const modalBody = document.querySelector('#aiAnalysisModal .modal-body');
+                if (modalBody) {
+                    const progressContainer = document.createElement('div');
+                    progressContainer.innerHTML = `
+                        <div class="progress mt-3" style="height: 30px;">
+                            <div id="aiAnalysisProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                                role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                Analyse en cours : 0%
+                            </div>
+                        </div>
+                        <div id="aiAnalysisStatus" class="text-center mt-2 text-muted">
+                            Préparation de l'analyse...
+                        </div>
+                    `;
+                    modalBody.appendChild(progressContainer);
+                    
+                    // Simulation de la progression
+                    const progressBar = document.getElementById('aiAnalysisProgressBar');
+                    const statusText = document.getElementById('aiAnalysisStatus');
+                    let currentStep = 0;
+                    const steps = [
+                        { percent: 10, text: "Initialisation de l'analyse..." },
+                        { percent: 30, text: "Traitement des données..." },
+                        { percent: 50, text: "Génération des insights..." },
+                        { percent: 75, text: "Finalisation de l'analyse..." },
+                        { percent: 90, text: "Préparation du rapport..." }
+                    ];
+                    
+                    const progressInterval = setInterval(() => {
+                        if (currentStep < steps.length) {
+                            progressBar.style.width = `${steps[currentStep].percent}%`;
+                            progressBar.setAttribute('aria-valuenow', steps[currentStep].percent);
+                            progressBar.textContent = `Analyse en cours : ${steps[currentStep].percent}%`;
+                            statusText.textContent = steps[currentStep].text;
+                            currentStep++;
+                        } else {
+                            clearInterval(progressInterval);
+                        }
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'affichage de la progression:", error);
+                // En cas d'erreur, continuer quand même avec la soumission du formulaire
+            }
+        });
+    }
+    
+    // Initialiser les descriptions des menus déroulants
+    for (const config of [
+        { selectId: 'encoding-method', descriptionId: 'encoding-description' },
+        { selectId: 'standardization-method', descriptionId: 'standardization-description' },
+        { selectId: 'outlier-detection-method', descriptionId: 'outlier-detection-description' },
+        { selectId: 'outlier-treatment', descriptionId: 'outlier-treatment-description' },
+        { selectId: 'feature-engineering-type', descriptionId: 'feature-engineering-description' }
+    ]) {
+        const selectElement = document.getElementById(config.selectId);
+        if (selectElement) {
+            updateDescription(selectElement, config.descriptionId);
+        }
+    }
+});
+</script>
+{% endblock %}

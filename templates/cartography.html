@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Cartographie{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+<!-- Leaflet Heatmap Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<!-- Leaflet Markercluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<!-- Vérifiez ces balises dans la section head du template -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    #map-container {
+        height: 600px;
+        width: 100%;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-map-marked-alt me-2"></i>
+        Cartographie pour {{ filename }}
+    </h1>
+    
+    <div class="alert alert-info">
+        <p><i class="fas fa-info-circle me-2"></i> Cette fonctionnalité vous permet de visualiser les données géographiques de votre fichier CSV ({{ num_rows }} lignes).</p>
+        <p>Sélectionnez les colonnes contenant vos coordonnées et cliquez sur "Générer la carte".</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-cog me-2"></i>
+                    Paramètres de la carte
+                </div>
+                <div class="card-body">
+                    <form id="map-form">
+                        <div class="form-group mb-3">
+                            <label for="lat-col"><strong>Colonne contenant la latitude</strong></label>
+                            <select class="form-control" id="lat-col" name="lat_col" required>
+                                <option value="">-- Sélectionnez une colonne --</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                La latitude est généralement une valeur entre -90 et 90 degrés.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="lng-col"><strong>Colonne contenant la longitude</strong></label>
+                            <select class="form-control" id="lng-col" name="lng_col" required>
+                                <option value="">-- Sélectionnez une colonne --</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                La longitude est généralement une valeur entre -180 et 180 degrés.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="label-col">Colonne pour les étiquettes (optionnel)</label>
+                            <select class="form-control" id="label-col" name="label_col">
+                                <option value="Aucune">-- Aucune --</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="map-type">Type d'affichage</label>
+                            <select class="form-control" id="map-type" name="map_type">
+                                <option value="markers">Marqueurs individuels</option>
+                                <option value="clusters">Clusters (regroupement)</option>
+                                <option value="heatmap">Carte de chaleur</option>
+                            </select>
+                        </div>
+                        
+                        <button type="button" id="generate-map" class="btn btn-primary mt-3 w-100">
+                            <i class="fas fa-map-marked-alt me-1"></i> Générer la carte
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Aide
+                </div>
+                <div class="card-body">
+                    <h6>Comment utiliser la cartographie ?</h6>
+                    <ol>
+                        <li>Sélectionnez la <strong>colonne latitude</strong> (valeurs entre -90 et 90)</li>
+                        <li>Sélectionnez la <strong>colonne longitude</strong> (valeurs entre -180 et 180)</li>
+                        <li>Optionnellement, choisissez une colonne pour les étiquettes</li>
+                        <li>Choisissez un type d'affichage</li>
+                        <li>Cliquez sur "Générer la carte"</li>
+                    </ol>
+                    
+                    <h6 class="mt-3">Types d'affichage</h6>
+                    <ul>
+                        <li><strong>Marqueurs :</strong> Affiche chaque point individuellement</li>
+                        <li><strong>Clusters :</strong> Regroupe les points proches (utile pour beaucoup de données)</li>
+                        <li><strong>Carte de chaleur :</strong> Visualise la densité de points</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-map me-2"></i>
+                    Carte
+                </div>
+                <div class="card-body">
+                    <div id="map-container">
+                        <div class="text-center p-5">
+                            <p><i class="fas fa-map-marker-alt fa-3x mb-3 text-muted"></i></p>
+                            <p>Sélectionnez les colonnes de latitude et longitude, puis cliquez sur "Générer la carte"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables globales
+        let map = null;
+        let markersLayer = null;
+        let heatmapLayer = null;
+        let clustersLayer = null;
+        
+        // Références aux éléments DOM
+        const generateBtn = document.getElementById('generate-map');
+        const mapContainer = document.getElementById('map-container');
+        const mapTypeSelect = document.getElementById('map-type');
+        
+        // Fonction pour créer la carte
+        function createMap(center) {
+            // Si la carte existe déjà, réinitialiser la vue
+            if (map) {
+                map.setView(center, 8);
+                return;
+            }
+            
+            // Créer une nouvelle carte
+            map = L.map('map-container').setView(center, 8);
+            
+            // Ajouter le fond de carte OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+        
+        // Fonction pour afficher les points sur la carte
+        function displayPoints(geoJsonData) {
+            // Supprimer les couches existantes
+            if (markersLayer) map.removeLayer(markersLayer);
+            if (heatmapLayer) map.removeLayer(heatmapLayer);
+            if (clustersLayer) map.removeLayer(clustersLayer);
+            
+            // Créer les différentes couches
+            markersLayer = L.layerGroup();
+            clustersLayer = L.markerClusterGroup();
+            
+            // Points pour la carte de chaleur
+            const heatPoints = [];
+            
+            // Traiter chaque point
+            geoJsonData.features.forEach(feature => {
+                const coords = feature.geometry.coordinates;
+                const props = feature.properties;
+                
+                // Créer un marqueur
+                const marker = L.circleMarker([coords[1], coords[0]], {
+                    radius: 8,
+                    fillColor: '#3388ff',
+                    color: '#000',
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.6
+                });
+                
+                // Ajouter un popup
+                let popupContent = `<strong>${props.label || 'Point'}</strong><br>`;
+                popupContent += `Latitude: ${coords[1]}<br>`;
+                popupContent += `Longitude: ${coords[0]}<br>`;
+                
+                // Ajouter d'autres propriétés si disponibles
+                for (const [key, value] of Object.entries(props)) {
+                    if (key !== 'label' && key !== 'id' && key !== 'lat' && key !== 'lng') {
+                        popupContent += `${key}: ${value}<br>`;
+                    }
+                }
+                
+                marker.bindPopup(popupContent);
+                
+                // Ajouter aux couches
+                markersLayer.addLayer(marker);
+                clustersLayer.addLayer(L.marker([coords[1], coords[0]]).bindPopup(popupContent));
+                
+                // Ajouter à la carte de chaleur
+                heatPoints.push([coords[1], coords[0], 1]);
+            });
+            
+            // Créer la couche de carte de chaleur
+            heatmapLayer = L.heatLayer(heatPoints, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17
+            });
+            
+            // Afficher la couche selon le type sélectionné
+            updateDisplay();
+        }
+        
+        // Mettre à jour l'affichage selon le type sélectionné
+        function updateDisplay() {
+            const mapType = mapTypeSelect.value;
+            
+            // Supprimer les couches existantes
+            if (markersLayer) map.removeLayer(markersLayer);
+            if (heatmapLayer) map.removeLayer(heatmapLayer);
+            if (clustersLayer) map.removeLayer(clustersLayer);
+            
+            // Ajouter la couche appropriée
+            if (mapType === 'markers') {
+                markersLayer.addTo(map);
+            } else if (mapType === 'clusters') {
+                clustersLayer.addTo(map);
+            } else if (mapType === 'heatmap') {
+                heatmapLayer.addTo(map);
+            }
+        }
+        
+        // Écouter les changements du type de carte
+        mapTypeSelect.addEventListener('change', updateDisplay);
+        
+        // Écouter le clic sur le bouton de génération
+        generateBtn.addEventListener('click', function() {
+            // Récupérer les valeurs du formulaire
+            const latCol = document.getElementById('lat-col').value;
+            const lngCol = document.getElementById('lng-col').value;
+            const labelCol = document.getElementById('label-col').value;
+            
+            // Validation simple
+            if (!latCol || !lngCol) {
+                alert('Veuillez sélectionner les colonnes de latitude et longitude.');
+                return;
+            }
+            
+            // Afficher le chargement
+            mapContainer.innerHTML = `
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="mt-2">Génération de la carte en cours...</p>
+                </div>
+            `;
+            
+            // Préparer les données à envoyer
+            const formData = {
+                lat_col: latCol,
+                lng_col: lngCol,
+                label_col: labelCol !== 'Aucune' ? labelCol : null
+            };
+            
+            // Appeler l'API
+            fetch('/api/generate_map', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Erreur ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Initialiser la carte
+                createMap(data.center);
+                
+                // Afficher les points
+                displayPoints(data.map_data);
+                
+                // Afficher les statistiques
+                const statsHtml = `
+                    <div class="alert alert-info mt-3">
+                        <p><strong>Points détectés:</strong> ${data.stats.valid_points} sur ${data.stats.total_points}</p>
+                        ${data.stats.invalid_points > 0 ? 
+                            `<p><strong>Attention:</strong> ${data.stats.invalid_points} points ont été ignorés car leurs coordonnées sont invalides.</p>` : 
+                            ''}
+                    </div>
+                `;
+                
+                // Vérifier si un conteneur de statistiques existe déjà
+                let statsContainer = document.getElementById('stats-container');
+                if (!statsContainer) {
+                    // Créer un nouveau conteneur
+                    statsContainer = document.createElement('div');
+                    statsContainer.id = 'stats-container';
+                    mapContainer.parentNode.appendChild(statsContainer);
+                }
+                
+                // Mettre à jour le contenu
+                statsContainer.innerHTML = statsHtml;
+            })
+            .catch(error => {
+                console.error("Erreur:", error);
+                mapContainer.innerHTML = `
+                    <div class="alert alert-danger p-3">
+                        <h5>Erreur lors de la génération de la carte</h5>
+                        <p>${error.message}</p>
+                        <p>Vérifiez que les colonnes sélectionnées contiennent bien des coordonnées géographiques valides.</p>
+                    </div>
+                `;
+            });
+        });
+    });
+</script>
+{% endblock %}

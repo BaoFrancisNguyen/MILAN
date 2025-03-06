@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}MILAN - Historique d'analyses{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">
+                <i class="bi bi-clock-history"></i> Historique d'analyses
+            </h1>
+            
+            <ul class="nav nav-tabs mb-4" id="historyTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="csv-tab" data-bs-toggle="tab" data-bs-target="#csv-tab-pane" type="button" role="tab" aria-controls="csv-tab-pane" aria-selected="true">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Analyses CSV
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ai-tab" data-bs-toggle="tab" data-bs-target="#ai-tab-pane" type="button" role="tab" aria-controls="ai-tab-pane" aria-selected="false">
+                        <i class="bi bi-robot"></i> Analyses IA
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pdf-tab" data-bs-toggle="tab" data-bs-target="#pdf-tab-pane" type="button" role="tab" aria-controls="pdf-tab-pane" aria-selected="false">
+                        <i class="bi bi-file-earmark-pdf"></i> Analyses PDF
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="historyTabsContent">
+                <!-- Onglet Analyses CSV -->
+                <div class="tab-pane fade show active" id="csv-tab-pane" role="tabpanel" aria-labelledby="csv-tab" tabindex="0">
+                    {% if csv_analyses %}
+                        <div class="list-group">
+                            {% for analysis in csv_analyses %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ analysis.dataset_name }}</h5>
+                                        <small>{{ analysis.timestamp }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ analysis.dataset_description }}</p>
+                                    <div class="accordion mt-2" id="accordion-csv-{{ loop.index }}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-csv-{{ loop.index }}">
+                                                    Détails de l'analyse
+                                                </button>
+                                            </h2>
+                                            <div id="collapse-csv-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordion-csv-{{ loop.index }}">
+                                                <div class="accordion-body">
+                                                    <pre class="text-wrap">{{ analysis.analysis }}</pre>
+                                                    
+                                                    {% if analysis.metadata and analysis.metadata.transformations %}
+                                                        <h6 class="mt-3">Transformations appliquées:</h6>
+                                                        <ul>
+                                                            {% for transform in analysis.metadata.transformations %}
+                                                                <li>{{ transform }}</li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Aucune analyse CSV enregistrée dans l'historique.
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Onglet Analyses IA -->
+                <div class="tab-pane fade" id="ai-tab-pane" role="tabpanel" aria-labelledby="ai-tab" tabindex="0">
+                    {% set ai_analyses = [] %}
+                    {% for analysis in csv_analyses %}
+                        {% if "Analyse IA" in analysis.dataset_description %}
+                            {% set ai_analyses = ai_analyses + [analysis] %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if ai_analyses %}
+                        <div class="list-group">
+                            {% for analysis in ai_analyses %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ analysis.dataset_name }}</h5>
+                                        <small>{{ analysis.timestamp }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ analysis.dataset_description }}</p>
+                                    <div class="accordion mt-2" id="accordion-ai-{{ loop.index }}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-ai-{{ loop.index }}">
+                                                    Détails de l'analyse IA
+                                                </button>
+                                            </h2>
+                                            <div id="collapse-ai-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordion-ai-{{ loop.index }}">
+                                                <div class="accordion-body">
+                                                    <div class="ai-analysis-container">
+                                                        {{ analysis.analysis|safe }}
+                                                    </div>
+                                                    
+                                                    {% if analysis.metadata and analysis.metadata.user_context %}
+                                                        <h6 class="mt-3">Contexte utilisateur:</h6>
+                                                        <div class="alert alert-light">
+                                                            {{ analysis.metadata.user_context }}
+                                                        </div>
+                                                    {% endif %}
+                                                    
+                                                    {% if analysis.metadata and analysis.metadata.transformations %}
+                                                        <h6 class="mt-3">Transformations appliquées:</h6>
+                                                        <ul>
+                                                            {% for transform in analysis.metadata.transformations %}
+                                                                <li>{{ transform }}</li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Aucune analyse IA enregistrée dans l'historique.
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Onglet Analyses PDF -->
+                <div class="tab-pane fade" id="pdf-tab-pane" role="tabpanel" aria-labelledby="pdf-tab" tabindex="0">
+                    {% if pdf_analyses %}
+                        <div class="list-group">
+                            {% for analysis in pdf_analyses %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ analysis.pdf_name }}</h5>
+                                        <small>{{ analysis.timestamp }}</small>
+                                    </div>
+                                    <div class="accordion mt-2" id="accordion-pdf-{{ loop.index }}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-pdf-{{ loop.index }}">
+                                                    Détails de l'analyse PDF
+                                                </button>
+                                            </h2>
+                                            <div id="collapse-pdf-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordion-pdf-{{ loop.index }}">
+                                                <div class="accordion-body">
+                                                    {% if analysis.metadata %}
+                                                        <h6>Métadonnées du document:</h6>
+                                                        <ul>
+                                                            {% for key, value in analysis.metadata.items() %}
+                                                                {% if key != 'tables' and value %}
+                                                                    <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% endif %}
+                                                    
+                                                    {% if analysis.analysis %}
+                                                        <h6 class="mt-3">Analyse:</h6>
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                {% if analysis.analysis.summary %}
+                                                                    <h6>Résumé:</h6>
+                                                                    <p>{{ analysis.analysis.summary }}</p>
+                                                                {% endif %}
+                                                                
+                                                                {% if analysis.analysis.insights %}
+                                                                    <h6>Insights:</h6>
+                                                                    <ul>
+                                                                        {% for insight in analysis.analysis.insights %}
+                                                                            <li>{{ insight }}</li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Aucune analyse PDF enregistrée dans l'historique.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-analysis-container {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        border-left: 4px solid #3498db;
+        margin-bottom: 15px;
+    }
+    
+    .list-group-item {
+        transition: background-color 0.3s;
+    }
+    
+    .list-group-item:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(52, 152, 219, 0.1);
+        color: #2c3e50;
+    }
+</style>
+{% endblock %}

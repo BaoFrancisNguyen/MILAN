@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}MILAN - Traitement de données CSV{% endblock %}
+
+{% block extra_css %}
+<style>
+    .drag-drop-zone {
+        border: 2px dashed #cccccc;
+        border-radius: 10px;
+        padding: 40px 20px;
+        text-align: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+    }
+    .drag-drop-zone.active {
+        border-color: #3498db;
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    .drag-drop-zone .upload-icon {
+        font-size: 4rem;
+        color: #95a5a6;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    .drag-drop-zone:hover .upload-icon {
+        color: #3498db;
+    }
+    .drag-drop-zone.active .upload-icon {
+        color: #3498db;
+    }
+    .file-upload-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="mb-4">
+                <i class="bi bi-table"></i> Traitement de données CSV
+            </h1>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Importer un fichier CSV</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('data_processing') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <div class="position-relative drag-drop-zone" id="dragDropZone">
+                            <div class="upload-icon">
+                                <i class="bi bi-file-earmark-arrow-up"></i>
+                            </div>
+                            <h4>Glissez-déposez votre fichier CSV ici</h4>
+                            <p class="text-muted">ou cliquez pour sélectionner un fichier</p>
+                            <input type="file" name="file" class="file-upload-input" id="fileUpload" accept=".csv">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <span id="selectedFileName" class="text-muted"></span>
+                            <button type="submit" class="btn btn-primary" id="uploadButton" disabled>
+                                <i class="bi bi-upload"></i> Charger le fichier
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+<div class="form-group mb-3">
+    <label for="delimiter">Délimiteur</label>
+    <select class="form-control" id="delimiter" name="delimiter">
+        <option value="auto">Auto-détection</option>
+        <option value=",">Virgule (,)</option>
+        <option value=";" selected>Point-virgule (;)</option>
+        <option value="\t">Tabulation</option>
+        <option value="|">Pipe (|)</option>
+    </select>
+    <small class="form-text text-muted">
+        Sélectionnez le caractère qui sépare les colonnes dans votre fichier CSV.
+    </small>
+</div>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Historique récent</h5>
+                </div>
+                <div class="card-body">
+                    <p>Accédez rapidement à vos analyses récentes :</p>
+                    <div class="list-group">
+                        <!-- Si des analyses récentes existent, les afficher ici -->
+                        {% if recent_analyses %}
+                            {% for analysis in recent_analyses[:5] %}
+                                <a href="{{ url_for('history') }}#{{ analysis.id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ analysis.dataset_name }}</h6>
+                                        <small class="text-muted">{{ analysis.timestamp[:16].replace('T', ' ') }}</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        <i class="bi bi-eye"></i>
+                                    </span>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item text-center text-muted">
+                                <p>Aucune analyse récente trouvée</p>
+                                <small>Chargez un fichier CSV pour commencer</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Fonctionnalités disponibles</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <strong>Gestion des valeurs manquantes</strong>
+                                        <div class="small text-muted">Imputation automatique ou personnalisée</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <strong>Encodage des variables catégorielles</strong>
+                                        <div class="small text-muted">One-hot encoding, label encoding</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <strong>Standardisation des données</strong>
+                                        <div class="small text-muted">Z-score, Min-Max, Robust scaling</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <strong>Détection des valeurs aberrantes</strong>
+                                        <div class="small text-muted">Méthodes statistiques, visualisation</div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <div>
+                                        <strong>Analyse exploratoire des données</strong>
+                                        <div class="small text-muted">Statistiques, corrélations, distributions</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Analyse avec IA</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-robot fs-1 text-primary me-3"></i>
+                                <div>
+                                    <h5 class="mb-1">Comprendre vos données automatiquement</h5>
+                                    <p class="mb-0 text-muted">Notre IA analyse vos données et fournit des insights pertinents.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <strong>Conseil</strong>: Pour de meilleurs résultats, utilisez un fichier CSV bien structuré avec des en-têtes de colonnes clairs.
+                            </div>
+                            
+                            <p>L'intelligence artificielle peut :</p>
+                            <ul>
+                                <li>Identifier les patterns cachés dans vos données</li>
+                                <li>Suggérer des transformations pertinentes</li>
+                                <li>Générer un rapport d'analyse automatique</li>
+                                <li>Répondre à vos questions spécifiques sur les données</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dragDropZone = document.getElementById('dragDropZone');
+        const fileUpload = document.getElementById('fileUpload');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const uploadButton = document.getElementById('uploadButton');
+        
+        // Gestionnaire pour le changement de fichier
+        fileUpload.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                selectedFileName.textContent = 'Fichier sélectionné : ' + this.files[0].name;
+                uploadButton.disabled = false;
+            } else {
+                selectedFileName.textContent = '';
+                uploadButton.disabled = true;
+            }
+        });
+        
+        // Gestionnaires pour le drag & drop
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragDropZone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                dragDropZone.classList.add('active');
+            });
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragDropZone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                dragDropZone.classList.remove('active');
+                
+                if (eventName === 'drop') {
+                    fileUpload.files = e.dataTransfer.files;
+                    fileUpload.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

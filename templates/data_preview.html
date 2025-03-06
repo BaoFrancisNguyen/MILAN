@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}MILAN - Aperçu des données{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('data_processing') }}">Données CSV</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Aperçu de {{ filename }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-table"></i> {{ filename }}
+                </h1>
+                <div>
+                    <a href="{{ url_for('data_transform') }}" class="btn btn-primary">
+                        <i class="bi bi-magic"></i> Transformer les données
+                    </a>
+                    <a href="{{ url_for('visualizations') }}" class="btn btn-outline-primary ms-2">
+                        <i class="bi bi-graph-up"></i> Visualiser
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stats-value">{{ df_info.shape[0] }}</div>
+                                    <div class="stats-label">Lignes</div>
+                                </div>
+                                <div class="stats-icon">
+                                    <i class="bi bi-list-ol"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stats-value">{{ df_info.shape[1] }}</div>
+                                    <div class="stats-label">Colonnes</div>
+                                </div>
+                                <div class="stats-icon">
+                                    <i class="bi bi-columns-gap"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stats-value">{{ df_info.missing_values }}</div>
+                                    <div class="stats-label">Valeurs manquantes</div>
+                                </div>
+                                <div class="stats-icon">
+                                    <i class="bi bi-question-diamond"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stats-value">{{ df_info.numeric_count }}</div>
+                                    <div class="stats-label">Colonnes numériques</div>
+                                </div>
+                                <div class="stats-icon">
+                                    <i class="bi bi-123"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="nav nav-tabs" id="dataPreviewTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-tab-pane" type="button" role="tab" aria-controls="preview-tab-pane" aria-selected="true">
+                        <i class="bi bi-table"></i> Aperçu
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="columns-tab" data-bs-toggle="tab" data-bs-target="#columns-tab-pane" type="button" role="tab" aria-controls="columns-tab-pane" aria-selected="false">
+                        <i class="bi bi-columns"></i> Colonnes
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-tab-pane" type="button" role="tab" aria-controls="stats-tab-pane" aria-selected="false">
+                        <i class="bi bi-bar-chart"></i> Statistiques
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="quality-tab" data-bs-toggle="tab" data-bs-target="#quality-tab-pane" type="button" role="tab" aria-controls="quality-tab-pane" aria-selected="false">
+                        <i class="bi bi-check-circle"></i> Qualité des données
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="dataPreviewTabsContent">
+                <!-- Onglet Aperçu -->
+                <div class="tab-pane fade show active" id="preview-tab-pane" role="tabpanel" aria-labelledby="preview-tab" tabindex="0">
+                    <div class="card border-top-0 rounded-0 rounded-bottom">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                {{ preview_data | safe }}
+                            </div>
+                            <p class="text-muted mt-3">
+                                <small>Affichage des 100 premières lignes uniquement. Le jeu de données complet contient {{ df_info.shape[0] }} lignes.</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Onglet Colonnes -->
+                <div class="tab-pane fade" id="columns-tab-pane" role="tabpanel" aria-labelledby="columns-tab" tabindex="0">
+                    <div class="card border-top-0 rounded-0 rounded-bottom">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Colonne</th>
+                                            <th>Type</th>
+                                            <th>Valeurs uniques</th>
+                                            <th>Valeurs manquantes</th>
+                                            <th>Échantillon</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for col in columns %}
+                                        <tr>
+                                            <td>{{ col }}</td>
+                                            <td><code>{{ df_info.dtypes[col] }}</code></td>
+                                            <td>
+                                                <!-- Implémentation à faire: calcul des valeurs uniques -->
+                                                <span class="badge bg-secondary">À calculer</span>
+                                            </td>
+                                            <td>
+                                                <!-- Implémentation à faire: calcul des valeurs manquantes par colonne -->
+                                                <span class="badge {% if df_info.missing_values > 0 %}bg-warning{% else %}bg-success{% endif %}">
+                                                    {% if df_info.missing_values > 0 %}
+                                                        Présentes
+                                                    {% else %}
+                                                        Aucune
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <!-- Implémentation à faire: échantillon de valeurs -->
+                                                <i class="text-muted">Échantillon</i>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Onglet Statistiques -->
+                <div class="tab-pane fade" id="stats-tab-pane" role="tabpanel" aria-labelledby="stats-tab" tabindex="0">
+                    <div class="card border-top-0 rounded-0 rounded-bottom">
+                        <div class="card-body">
+                            {% if df_info.has_numeric %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle-fill"></i> Les statistiques sont disponibles pour les colonnes numériques uniquement.
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Colonne</th>
+                                                <th>Min</th>
+                                                <th>Max</th>
+                                                <th>Moyenne</th>
+                                                <th>Médiane</th>
+                                                <th>Écart-type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Implémentation à faire: statistiques numériques -->
+                                            <tr>
+                                                <td colspan="6" class="text-center">
+                                                    <i>Les statistiques seront calculées lors de la transformation des données.</i>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Aucune colonne numérique détectée dans le jeu de données.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Onglet Qualité des données -->
+                <div class="tab-pane fade" id="quality-tab-pane" role="tabpanel" aria-labelledby="quality-tab" tabindex="0">
+                    <div class="card border-top-0 rounded-0 rounded-bottom">
+                        <div class="card-body">
+                            <h5>Rapport de qualité des données</h5>
+                            
+                            <!-- Valeurs manquantes -->
+                                                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Valeurs manquantes</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if df_info.missing_values > 0 %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Le jeu de données contient <strong>{{ df_info.missing_values }}</strong> valeurs manquantes.
+                                        </div>
+                                        
+                                        <p>Recommandations :</p>
+                                        <ul>
+                                            <li>Envisagez d'imputer les valeurs manquantes par la moyenne, la médiane ou le mode</li>
+                                            <li>Supprimez les lignes ou colonnes avec trop de valeurs manquantes</li>
+                                            <li>Utilisez des techniques d'apprentissage automatique pour prédire les valeurs manquantes</li>
+                                        </ul>
+                                        
+                                        <div id="missing-values-chart" style="height: 300px;">
+                                            <!-- Graphique à générer avec JavaScript -->
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-success">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            Excellent ! Aucune valeur manquante détectée dans le jeu de données.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Doublons -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Doublons</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Implémentation à faire: détection des doublons -->
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        La détection des doublons sera effectuée lors de la transformation des données.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Valeurs aberrantes -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Valeurs aberrantes</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if df_info.has_numeric %}
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            La détection des valeurs aberrantes sera effectuée lors de la transformation des données.
+                                        </div>
+                                        
+                                        <p>Les colonnes numériques suivantes seront analysées pour les valeurs aberrantes :</p>
+                                        <ul>
+                                            {% for col in columns if df_info.dtypes[col].startswith('float') or df_info.dtypes[col].startswith('int') %}
+                                                <li>{{ col }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Aucune colonne numérique détectée. La détection des valeurs aberrantes n'est pas applicable.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Conformité des types de données -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Conformité des types de données</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        L'analyse de la conformité des types de données sera effectuée lors de la transformation.
+                                    </div>
+                                    
+                                    <p>Types de données détectés :</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for type in df_info.dtypes.values()|unique %}
+                                            <span class="badge bg-secondary">{{ type }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('data_processing') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+                <div>
+                    <a href="{{ url_for('data_transform') }}" class="btn btn-primary">
+                        <i class="bi bi-magic"></i> Transformer les données
+                    </a>
+                    <a href="{{ url_for('visualizations') }}" class="btn btn-outline-primary ms-2">
+                        <i class="bi bi-graph-up"></i> Visualiser
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Si des valeurs manquantes sont présentes, créer un graphique
+        {% if df_info.missing_values > 0 %}
+            // Pour l'implémentation ultérieure : logique pour créer un graphique des valeurs manquantes
+            // avec Plotly.js basé sur les données du serveur
+        {% endif %}
+    });
+</script>
+{% endblock %}
+
+                                
