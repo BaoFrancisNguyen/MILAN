@@ -1,0 +1,35 @@
+# Base Flask
+Flask==2.3.3
+flask-wtf==1.2.1
+Werkzeug==2.3.7
+Jinja2==3.1.2
+itsdangerous==2.1.2
+
+# Analyse de données
+pandas==2.1.1
+numpy==1.25.2
+scipy==1.11.3
+scikit-learn==1.3.0
+
+# Visualisation
+plotly==5.17.0
+matplotlib==3.8.0
+seaborn==0.12.2
+
+# Traitement PDF
+PyMuPDF==1.23.3
+tabula-py==2.8.2
+PyPDF2==3.0.1
+
+# IA et Transformation
+requests==2.31.0
+transformers==4.33.2
+
+# Utilitaires
+python-dotenv==1.0.0
+xlsxwriter==3.1.2
+hashlib-additional==3.5.1
+uuid==1.30
+
+# Logging
+colorlog==6.7.0

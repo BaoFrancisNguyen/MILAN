@@ -1,0 +1,368 @@
+/*
+ * ORBIT - Dashboard.css
+ * Styles spécifiques pour le dashboard interactif
+ */
+
+/* Conteneur principal du dashboard */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(300px, auto);
+  grid-gap: 20px;
+  margin: 20px 0;
+  min-height: 600px;
+}
+
+/* Widgets du dashboard */
+.dashboard-widget {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.dashboard-widget.dragging {
+  opacity: 0.7;
+  z-index: 1000;
+  cursor: grabbing;
+}
+
+.dashboard-widget .card {
+  height: 100%;
+  margin-bottom: 0;
+}
+
+/* Poignée de déplacement */
+.drag-handle {
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Visualisations */
+.chart-container {
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+  transition: opacity 0.3s ease;
+}
+
+.loading .chart-container {
+  opacity: 0.5;
+}
+
+/* Overlay de drop zone */
+.drop-zone-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(52, 152, 219, 0.2);
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  display: none;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.dashboard-container.dragging .drop-zone-overlay {
+  display: block;
+}
+
+/* Boutons d'action des widgets */
+.widget-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.widget-edit-btn, .widget-remove-btn {
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.widget-edit-btn:hover, .widget-remove-btn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Placeholder pour les widgets vides */
+.widget-placeholder {
+  grid-column: span 6;
+  grid-row: span 1;
+  border: 2px dashed #ced4da;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.widget-placeholder:hover {
+  border-color: #3498db;
+  background-color: rgba(52, 152, 219, 0.05);
+  cursor: pointer;
+}
+
+.widget-placeholder i {
+  font-size: 2rem;
+  color: #95a5a6;
+  margin-bottom: 10px;
+}
+
+/* Message vide pour le dashboard */
+.dashboard-empty-message {
+  grid-column: span 12;
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #ced4da;
+}
+
+.dashboard-empty-message i {
+  font-size: 3rem;
+  color: #95a5a6;
+  margin-bottom: 20px;
+}
+
+.dashboard-empty-message h3 {
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+/* Barre d'outils du dashboard */
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-toolbar-title {
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: #2c3e50;
+}
+
+.dashboard-toolbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Labels pour les axes des graphiques */
+.axis-label {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.axis-value {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+/* Styles pour les filtres de dashboard */
+.dashboard-filters {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.dashboard-filters-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.dashboard-filters-title i {
+  margin-right: 8px;
+  transition: transform 0.3s ease;
+}
+
+.dashboard-filters-title.collapsed i {
+  transform: rotate(-90deg);
+}
+
+.dashboard-filters-content {
+  padding-top: 10px;
+}
+
+.filter-item {
+  margin-bottom: 10px;
+}
+
+.filter-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+/* Actions globales pour les charts */
+.chart-action-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container:hover .chart-action-btn {
+  opacity: 1;
+}
+
+.chart-action-btn:hover {
+  background-color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Mode plein écran pour les charts */
+.chart-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1050;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-fullscreen-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.chart-fullscreen-close {
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.chart-fullscreen-close:hover {
+  opacity: 1;
+}
+
+.chart-fullscreen-content {
+  flex: 1;
+}
+
+/* Adaptations pour le thème sombre */
+body.dark-theme .dashboard-toolbar {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-theme .dashboard-toolbar-title {
+  color: #ecf0f1;
+}
+
+body.dark-theme .widget-placeholder,
+body.dark-theme .dashboard-empty-message {
+  background-color: #1e1e1e;
+  border-color: #495057;
+}
+
+body.dark-theme .dashboard-filters {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-theme .axis-label {
+  color: #95a5a6;
+}
+
+body.dark-theme .axis-value {
+  color: #ecf0f1;
+}
+
+body.dark-theme .chart-action-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #ecf0f1;
+}
+
+body.dark-theme .chart-action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+body.dark-theme .chart-fullscreen {
+  background-color: rgba(30, 30, 30, 0.95);
+  color: #ecf0f1;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .dashboard-widget {
+    grid-column: span 6 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-widget {
+    grid-column: span 12 !important;
+  }
+  
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .dashboard-toolbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .chart-container {
+    min-height: 200px;
+  }
+  
+  .chart-fullscreen {
+    padding: 20px;
+  }
+}
